@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sổ Tích Lũy & Tính Lãi Túi Thần Tài MoMo</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <style>
+    body {
+      background-color: #121212;
+      color: #e0e0e0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    .card-dark {
+      background-color: #1e1e1e;
+      border: 1px solid #2d2d2d;
+      border-radius: 1rem;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+    }
+
+    .card-glow {
+      box-shadow: 0 0 20px rgba(0, 229, 255, 0.08);
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #181818;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #333;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #444;
+    }
+
+    input[type=range] {
+      accent-color: #00e5ff;
+    }
+
+    /* Custom glowing badge */
+    .badge-glow {
+      box-shadow: 0 0 10px rgba(0, 230, 118, 0.2);
+    }
+  </style>
+</head>
+<body class="min-h-screen p-4 md:p-8">
+
+  <div class="max-w-7xl mx-auto space-y-6">
+
+    <!-- Top Header Bar -->
+    <header class="card-dark card-glow p-6 flex flex-col md:flex-row items-center justify-between gap-4">
+      <div class="flex items-center space-x-4">
+        <div class="p-3.5 bg-cyan-500/10 text-cyan-400 rounded-2xl border border-cyan-500/20">
+          <i class="fa-solid fa-coins text-3xl"></i>
+        </div>
+        <div>
+          <h1 class="text-xl md:text-2xl font-bold text-white flex items-center gap-2">
+            Sổ Tích Lũy Túi Thần Tài MoMo
+            <span class="text-xs bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 px-2 py-0.5 rounded-full font-normal">Tự động cộng dồn lãi</span>
+          </h1>
+          <p class="text-xs md:text-sm text-gray-400 mt-0.5">Ghi nhận nhật ký nạp tiền thực tế & dự phóng lãi kép 4.0%/năm mỗi ngày</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 w-full md:w-auto justify-end">
+        <button id="btnQuick50k" class="bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 shadow-lg shadow-cyan-950">
+          <i class="fa-solid fa-bolt text-yellow-300"></i> Nạp nhanh 50k hôm nay
+        </button>
+        <button id="btnResetData" class="bg-neutral-800 hover:bg-rose-900/50 text-gray-400 hover:text-rose-300 text-xs px-3 py-2.5 rounded-xl border border-neutral-700 transition-colors" title="Xóa tất cả dữ liệu">
+          <i class="fa-solid fa-rotate-right"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Summary Cards Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <!-- Current Total Balance -->
+      <div class="card-dark p-5 border-l-4 border-l-cyan-400 flex items-center justify-between">
+        <div>
+          <p class="text-xs text-gray-400 font-medium">Số Dư Túi Hiện Tại</p>
+          <h3 class="text-2xl font-black text-cyan-400 mt-1" id="cardTotalBalance">0 đ</h3>
+          <p class="text-[10px] text-gray-500 mt-0.5" id="cardSubtextBalance">Bao gồm gốc + lãi tính tới hôm nay</p>
+        </div>
+        <div class="p-3 bg-cyan-500/10 text-cyan-400 rounded-xl">
+          <i class="fa-solid fa-wallet text-xl"></i>
+        </div>
+      </div>
+
+      <!-- Total Principal Deposited -->
+      <div class="card-dark p-5 border-l-4 border-l-blue-500 flex items-center justify-between">
+        <div>
+          <p class="text-xs text-gray-400 font-medium">Tổng Tiền Gốc Đã Nạp</p>
+          <h3 class="text-xl font-bold text-white mt-1" id="cardPrincipal">0 đ</h3>
+          <p class="text-[10px] text-gray-500 mt-0.5" id="cardTxCount">0 lượt nạp</p>
+        </div>
+        <div class="p-3 bg-blue-500/10 text-blue-400 rounded-xl">
+          <i class="fa-solid fa-arrow-down-to-bracket text-xl"></i>
+        </div>
+      </div>
+
+      <!-- Total Interest Earned -->
+      <div class="card-dark p-5 border-l-4 border-l-emerald-400 flex items-center justify-between">
+        <div>
+          <p class="text-xs text-gray-400 font-medium">Lãi Tích Lũy Đến Nay</p>
+          <h3 class="text-xl font-bold text-emerald-400 mt-1" id="cardInterest">+0 đ</h3>
+          <p class="text-[10px] text-emerald-500/80 mt-0.5" id="cardDailyEarn">~0 đ / ngày</p>
+        </div>
+        <div class="p-3 bg-emerald-500/10 text-emerald-400 rounded-xl badge-glow">
+          <i class="fa-solid fa-chart-line-up text-xl"></i>
+        </div>
+      </div>
+
+      <!-- Projected 1-Year Total -->
+      <div class="card-dark p-5 border-l-4 border-l-amber-400 flex items-center justify-between">
+        <div>
+          <p class="text-xs text-gray-400 font-medium">Dự Phóng Sau 1 Năm</p>
+          <h3 class="text-xl font-bold text-amber-400 mt-1" id="cardProjected1Y">0 đ</h3>
+          <p class="text-[10px] text-amber-500/80 mt-0.5">Nếu giữ nạp đều đặn 50k/ngày</p>
+        </div>
+        <div class="p-3 bg-amber-500/10 text-amber-400 rounded-xl">
+          <i class="fa-solid fa-crystal-ball text-xl"></i>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+      <!-- LEFT SECTION: Daily Deposit Input & Transaction Table (5 Cols) -->
+      <div class="lg:col-span-5 space-y-6">
+
+        <!-- Manual Balance Adjustment Card -->
+        <div class="card-dark p-5 border border-cyan-500/30 space-y-3 bg-gradient-to-r from-cyan-950/20 to-transparent">
+          <div class="flex items-center justify-between">
+            <h2 class="text-xs font-semibold text-cyan-300 uppercase tracking-wider flex items-center gap-2">
+              <i class="fa-solid fa-pen-to-square"></i> Cập Nhật Số Dư Ví Hiện Tại
+            </h2>
+            <span class="text-[10px] text-gray-400">Khớp với App MoMo</span>
+          </div>
+          <div class="flex gap-2">
+            <div class="relative flex-1">
+              <input type="number" id="inputDirectBalance" placeholder="Nhập số dư chính xác..." min="0" step="1000"
+                     class="w-full bg-neutral-900 border border-neutral-700 rounded-xl pl-3 pr-8 py-2 text-sm font-bold text-cyan-400 focus:outline-none focus:border-cyan-500">
+              <span class="absolute right-3 top-2 text-xs text-gray-500">đ</span>
+            </div>
+            <button id="btnSetBalance" class="bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold px-4 py-2 rounded-xl transition-all shadow">
+              Cập nhật
+            </button>
+          </div>
+        </div>
+
+        <!-- Input Form Card -->
+        <div class="card-dark p-6 space-y-4">
+          <div class="flex items-center justify-between">
+            <h2 class="text-base font-semibold text-white flex items-center gap-2">
+              <i class="fa-solid fa-square-plus text-cyan-400"></i>
+              Ghi Nhận Nạp Tiền Hàng Ngày
+            </h2>
+            <div class="flex items-center gap-1.5 text-xs text-gray-400 bg-neutral-900 px-2.5 py-1 rounded-lg border border-neutral-800">
+              <span>Lãi:</span>
+              <input type="number" id="inputRate" value="4.0" step="0.1" min="0.1" max="20" class="w-12 bg-transparent text-emerald-400 font-bold focus:outline-none text-right">
+              <span>%/năm</span>
+            </div>
+          </div>
+
+          <form id="depositForm" class="space-y-3">
+            <div>
+              <label class="block text-xs text-gray-400 mb-1">Số tiền nạp (VNĐ)</label>
+              <div class="relative">
+                <input type="number" id="inputAmount" value="50000" min="1000" step="1000" required
+                       class="w-full bg-neutral-900 border border-neutral-700 rounded-xl pl-3 pr-12 py-2.5 text-sm text-white font-semibold focus:outline-none focus:border-cyan-500">
+                <span class="absolute right-3 top-2.5 text-xs text-gray-500">đ</span>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs text-gray-400 mb-1">Ngày nạp</label>
+                <input type="date" id="inputDate" required
+                       class="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-cyan-500">
+              </div>
+
+              <div>
+                <label class="block text-xs text-gray-400 mb-1">Ghi chú (Tùy chọn)</label>
+                <input type="text" id="inputNote" placeholder="Ví dụ: Lương ngày, tiền lẻ..."
+                       class="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-cyan-500">
+              </div>
+            </div>
+
+            <button type="submit" class="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-semibold text-sm py-2.5 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2">
+              <i class="fa-solid fa-plus-circle"></i> Xác Nhận Nạp Tiền
+            </button>
+          </form>
+        </div>
+
+        <!-- Ledger History List -->
+        <div class="card-dark p-6 space-y-4">
+          <div class="flex items-center justify-between">
+            <h2 class="text-base font-semibold text-white flex items-center gap-2">
+              <i class="fa-solid fa-clock-rotate-left text-blue-400"></i>
+              Lịch Sử Nạp & Lãi Tích Lũy
+            </h2>
+            <span class="text-[11px] text-gray-500" id="txSummaryText">Tự động lưu trình duyệt</span>
+          </div>
+
+          <div class="overflow-x-auto max-h-[360px] overflow-y-auto pr-1">
+            <table class="w-full text-left text-xs">
+              <thead class="text-gray-400 border-b border-neutral-800 sticky top-0 bg-[#1e1e1e] z-10">
+                <tr>
+                  <th class="py-2.5">Ngày</th>
+                  <th class="py-2.5 text-right">Tiền nạp</th>
+                  <th class="py-2.5 text-right">Tổng số dư</th>
+                  <th class="py-2.5 text-center">Xóa</th>
+                </tr>
+              </thead>
+              <tbody id="ledgerTableBody" class="divide-y divide-neutral-800/60 text-gray-300">
+                <!-- Transactions dynamically inserted here -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RIGHT SECTION: Interactive Chart & Projection Engine (7 Cols) -->
+      <div class="lg:col-span-7 space-y-6">
+
+        <!-- Chart Container Card -->
+        <div class="card-dark p-6 space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <h2 class="text-base font-semibold text-white flex items-center gap-2">
+                <i class="fa-solid fa-chart-area text-cyan-400"></i>
+                Biểu Đồ Tăng Trưởng Tài Sản
+              </h2>
+              <p class="text-xs text-gray-400">Kết hợp Lịch sử thực tế (nét liền) & Dự phóng tương lai (nét đứt)</p>
+            </div>
+            
+            <div class="flex items-center gap-2 self-start sm:self-auto text-xs">
+              <span class="inline-flex items-center gap-1.5 bg-cyan-500/10 text-cyan-400 px-2.5 py-1 rounded-md border border-cyan-500/20 font-medium">
+                <span class="w-2 h-2 rounded-full bg-cyan-400"></span> Số dư
+              </span>
+              <span class="inline-flex items-center gap-1.5 bg-emerald-500/10 text-emerald-400 px-2.5 py-1 rounded-md border border-emerald-500/20 font-medium">
+                <span class="w-2 h-2 rounded-full bg-emerald-400"></span> Tiền lãi
+              </span>
+            </div>
+          </div>
+
+          <!-- Chart Canvas Area -->
+          <div class="relative w-full h-[320px]">
+            <canvas id="growthChart"></canvas>
+          </div>
+
+          <!-- Future Projection Config Controls -->
+          <div class="pt-3 border-t border-neutral-800/80 space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold text-gray-300 flex items-center gap-1.5">
+                <i class="fa-solid fa-sliders text-amber-400"></i> Cấu hình dự phóng tương lai:
+              </span>
+              <span class="text-xs text-cyan-400 font-bold" id="projectionInfoText">Dự phóng +365 ngày tới</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div class="bg-neutral-900/80 p-2.5 rounded-xl border border-neutral-800 space-y-1">
+                <div class="flex justify-between text-xs">
+                  <span class="text-gray-400">Dự kiến nạp tiếp:</span>
+                  <span class="font-bold text-cyan-400" id="valProjDaily">50.000 đ/ngày</span>
+                </div>
+                <input type="range" id="inputProjDaily" min="0" max="200000" step="10000" value="50000" class="w-full">
+              </div>
+
+              <div class="bg-neutral-900/80 p-2.5 rounded-xl border border-neutral-800 space-y-1">
+                <div class="flex justify-between text-xs">
+                  <span class="text-gray-400">Thời gian mô phỏng:</span>
+                  <span class="font-bold text-amber-400" id="valProjDays">365 ngày (1 năm)</span>
+                </div>
+                <input type="range" id="inputProjDays" min="30" max="1095" step="30" value="365" class="w-full">
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Educational Info Card -->
+        <div class="card-dark p-5 bg-gradient-to-r from-neutral-900 to-cyan-950/30 border border-neutral-800 text-xs space-y-2">
+          <div class="flex items-center gap-2 font-semibold text-cyan-300">
+            <i class="fa-solid fa-circle-info"></i> Cơ chế tính lãi kép của Túi Thần Tài MoMo:
+          </div>
+          <p class="text-gray-400 leading-relaxed">
+            • Lãi suất được tính theo ngày: <code class="text-cyan-400">Lãi ngày = Số dư × (Mức lãi%/365)</code>.<br>
+            • Tiền lãi mỗi sáng sẽ tự động gộp vào tiền gốc để tiếp tục sinh lãi kép cho các ngày tiếp theo.<br>
+            • Khi bạn nạp thêm tiền vào bất kỳ ngày nào, số dư mới lập tức được ghi nhận để tính toán lãi dồn dập.
+          </p>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    // Utility Formatter
+    function formatVND(amount) {
+      return new Intl.NumberFormat('vi-VN').format(Math.round(amount)) + ' đ';
+    }
+
+    // Storage Key
+    const STORAGE_KEY = 'momo_tui_than_tai_ledger_v1';
+
+    // Default Starting Data if localStorage empty
+    const DEFAULT_DATA = [
+      { id: 1, date: '2025-01-01', amount: 50000, note: 'Khởi tạo Túi Thần Tài' },
+      { id: 2, date: '2025-01-02', amount: 50000, note: 'Nạp tích lũy ngày 2' },
+      { id: 3, date: '2025-01-03', amount: 50000, note: 'Nạp tích lũy ngày 3' }
+    ];
+
+    // State
+    let deposits = [];
+
+    // DOM Elements
+    const depositForm = document.getElementById('depositForm');
+    const inputAmount = document.getElementById('inputAmount');
+    const inputDate = document.getElementById('inputDate');
+    const inputNote = document.getElementById('inputNote');
+    const inputRate = document.getElementById('inputRate');
+    const inputDirectBalance = document.getElementById('inputDirectBalance');
+    const btnSetBalance = document.getElementById('btnSetBalance');
+    const ledgerTableBody = document.getElementById('ledgerTableBody');
+
+    const cardTotalBalance = document.getElementById('cardTotalBalance');
+    const cardPrincipal = document.getElementById('cardPrincipal');
+    const cardInterest = document.getElementById('cardInterest');
+    const cardProjected1Y = document.getElementById('cardProjected1Y');
+    const cardTxCount = document.getElementById('cardTxCount');
+    const cardDailyEarn = document.getElementById('cardDailyEarn');
+
+    const btnQuick50k = document.getElementById('btnQuick50k');
+    const btnResetData = document.getElementById('btnResetData');
+
+    const inputProjDaily = document.getElementById('inputProjDaily');
+    const inputProjDays = document.getElementById('inputProjDays');
+    const valProjDaily = document.getElementById('valProjDaily');
+    const valProjDays = document.getElementById('valProjDays');
+
+    // Initialize Date picker to today
+    document.addEventListener('DOMContentLoaded', () => {
+      const todayStr = new Date().toISOString().split('T')[0];
+      inputDate.value = todayStr;
+
+      loadStorage();
+      setupChart();
+      recalculateAndRender();
+    });
+
+    // LocalStorage Handlers
+    function loadStorage() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        try {
+          deposits = JSON.parse(saved);
+        } catch(e) {
+          deposits = [...DEFAULT_DATA];
+        }
+      } else {
+        deposits = [...DEFAULT_DATA];
+      }
+    }
+
+    function saveStorage() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(deposits));
+    }
+
+    // Chart.js Configuration
+    let growthChart;
+    function setupChart() {
+      const ctx = document.getElementById('growthChart').getContext('2d');
+      growthChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: [],
+          datasets: [
+            {
+              label: 'Tổng số dư (Thực tế + Dự phóng)',
+              data: [],
+              borderColor: '#00e5ff',
+              backgroundColor: 'rgba(0, 229, 255, 0.08)',
+              fill: true,
+              tension: 0.3,
+              borderWidth: 2.5,
+              pointRadius: 2,
+              pointHoverRadius: 6,
+              segment: {
+                borderDash: ctx => ctx.p0.raw?.isProjected || ctx.p1.raw?.isProjected ? [5, 5] : undefined
+              }
+            },
+            {
+              label: 'Lãi tích lũy',
+              data: [],
+              borderColor: '#00e676',
+              borderDash: [2, 2],
+              fill: false,
+              tension: 0.2,
+              borderWidth: 1.8,
+              pointRadius: 0
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: '#1f2937',
+              titleColor: '#ffffff',
+              bodyColor: '#e5e7eb',
+              borderColor: '#374151',
+              borderWidth: 1,
+              callbacks: {
+                label: function(context) {
+                  const val = context.raw?.y !== undefined ? context.raw.y : context.raw;
+                  const isProj = context.raw?.isProjected ? ' (Dự phóng)' : '';
+                  return context.dataset.label + isProj + ': ' + formatVND(val);
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              ticks: { color: '#888888', font: { size: 10 } },
+              grid: { color: '#262626' }
+            },
+            y: {
+              ticks: {
+                color: '#888888',
+                font: { size: 10 },
+                callback: function(val) {
+                  return (val / 1000000).toFixed(1) + ' tr';
+                }
+              },
+              grid: { color: '#262626' }
+            }
+          }
+        }
+      });
+    }
+
+    function recalculateAndRender() {
+      // Sort deposits by date ascending
+      deposits.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+      const rateYear = parseFloat(inputRate.value) || 4.0;
+      const rateDaily = rateYear / 100 / 365;
+
+      ledgerTableBody.innerHTML = '';
+
+      if (deposits.length === 0) {
+        ledgerTableBody.innerHTML = `<tr><td colspan="4" class="py-6 text-center text-neutral-500">Chưa có lịch sử nạp tiền. Hãy bấm nút nạp ngay bên trên!</td></tr>`;
+        updateSummaryCards(0, 0, 0, 0);
+        updateChart([], []);
+        inputDirectBalance.value = 0;
+        return;
+      }
+
+      // Compute Timeline Day-By-Day
+      const startDate = new Date(deposits[0].date);
+      const today = new Date();
+      // Ensure timeline runs at least up to today
+      const lastDepositDate = new Date(deposits[deposits.length - 1].date);
+      const endDate = lastDepositDate > today ? lastDepositDate : today;
+
+      let currentBalance = 0;
+      let totalPrincipal = 0;
+      let accumulatedInterest = 0;
+
+      // Map deposits by date string YYYY-MM-DD
+      const depositMap = {};
+      deposits.forEach(d => {
+        depositMap[d.date] = (depositMap[d.date] || 0) + d.amount;
+      });
+
+      const timeline = [];
+      let currentDate = new Date(startDate);
+
+      while (currentDate <= endDate) {
+        const dateStr = currentDate.toISOString().split('T')[0];
+
+        // 1. Add daily interest from previous balance
+        const dailyInterest = currentBalance * rateDaily;
+        currentBalance += dailyInterest;
+        accumulatedInterest += dailyInterest;
+
+        // 2. Add new deposit if exists on this date
+        if (depositMap[dateStr]) {
+          currentBalance += depositMap[dateStr];
+          totalPrincipal += depositMap[dateStr];
+        }
+
+        timeline.push({
+          dateStr: dateStr,
+          balance: currentBalance,
+          principal: totalPrincipal,
+          interest: accumulatedInterest,
+          isProjected: false
+        });
+
+        // Advance 1 day
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+
+      // Render History Table (Most recent first)
+      const ledgerMapByDate = {};
+      timeline.forEach(item => {
+        ledgerMapByDate[item.dateStr] = item;
+      });
+
+      [...deposits].reverse().forEach(dep => {
+        const rowData = ledgerMapByDate[dep.date] || { balance: dep.amount, interest: 0 };
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-neutral-800/50 transition-colors";
+        tr.innerHTML = `
+          <td class="py-2.5 font-medium text-white">
+            ${dep.date}
+            ${dep.note ? `<span class="block text-[10px] text-gray-500 font-normal">${dep.note}</span>` : ''}
+          </td>
+          <td class="py-2.5 text-right font-semibold text-cyan-400">+${formatVND(dep.amount)}</td>
+          <td class="py-2.5 text-right font-bold text-white">${formatVND(rowData.balance)}</td>
+          <td class="py-2.5 text-center">
+            <button onclick="deleteDeposit(${dep.id})" class="text-neutral-500 hover:text-rose-400 px-1 transition-colors">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          </td>
+        `;
+        ledgerTableBody.appendChild(tr);
+      });
+
+      // Compute Future Projection from Current Balance
+      const projDaily = parseFloat(inputProjDaily.value) || 0;
+      const projDays = parseInt(inputProjDays.value) || 365;
+
+      let projBalance = currentBalance;
+      let projInterest = accumulatedInterest;
+      let projPrincipal = totalPrincipal;
+
+      const projTimeline = [];
+      let pDate = new Date(endDate);
+
+      for (let i = 1; i <= projDays; i++) {
+        pDate.setDate(pDate.getDate() + 1);
+        const pDateStr = pDate.toISOString().split('T')[0];
+
+        // Daily interest
+        const dInterest = projBalance * rateDaily;
+        projBalance += dInterest;
+        projInterest += dInterest;
+
+        // Daily addition
+        projBalance += projDaily;
+        projPrincipal += projDaily;
+
+        projTimeline.push({
+          dateStr: pDateStr,
+          balance: projBalance,
+          principal: projPrincipal,
+          interest: projInterest,
+          isProjected: true
+        });
+      }
+
+      // Update Cards
+      const latestPoint = timeline[timeline.length - 1];
+      const finalProjPoint = projTimeline[projTimeline.length - 1];
+
+      updateSummaryCards(
+        latestPoint.balance,
+        latestPoint.principal,
+        latestPoint.interest,
+        finalProjPoint ? finalProjPoint.balance : latestPoint.balance,
+        deposits.length,
+        latestPoint.balance * rateDaily
+      );
+
+      // Set value for direct balance input
+      inputDirectBalance.value = Math.round(latestPoint.balance);
+
+      // Render Chart with Actual + Projected data
+      updateChart(timeline, projTimeline);
+    }
+
+    function updateSummaryCards(balance, principal, interest, projected1Y, count, dailyEarn) {
+      cardTotalBalance.innerText = formatVND(balance);
+      cardPrincipal.innerText = formatVND(principal);
+      cardInterest.innerText = '+' + formatVND(interest);
+      cardProjected1Y.innerText = formatVND(projected1Y);
+      cardTxCount.innerText = count + ' lượt nạp tiền';
+      cardDailyEarn.innerText = '~' + formatVND(dailyEarn) + ' / ngày';
+    }
+
+    function updateChart(actualTimeline, projTimeline) {
+      const labels = [];
+      const totalDataset = [];
+      const interestDataset = [];
+
+      // Sampling data points so chart doesn't crowd if timeline is very long
+      const combined = [...actualTimeline, ...projTimeline];
+      const step = Math.max(1, Math.floor(combined.length / 50));
+
+      combined.forEach((item, index) => {
+        if (index % step === 0 || index === combined.length - 1) {
+          labels.push(item.dateStr);
+          totalDataset.push({
+            x: item.dateStr,
+            y: item.balance,
+            isProjected: item.isProjected
+          });
+          interestDataset.push({
+            x: item.dateStr,
+            y: item.interest,
+            isProjected: item.isProjected
+          });
+        }
+      });
+
+      growthChart.data.labels = labels;
+      growthChart.data.datasets[0].data = totalDataset;
+      growthChart.data.datasets[1].data = interestDataset;
+      growthChart.update();
+    }
+
+    // Direct Balance Update Button Event
+    btnSetBalance.addEventListener('click', () => {
+      const newBalance = parseFloat(inputDirectBalance.value);
+      if (isNaN(newBalance) || newBalance < 0) return;
+
+      const todayStr = new Date().toISOString().split('T')[0];
+      
+      // Calculate difference between new target balance and computed balance
+      // Adjust by adding an adjustment deposit record for today
+      deposits.push({
+        id: Date.now(),
+        date: todayStr,
+        amount: newBalance,
+        note: 'Điều chỉnh số dư ví'
+      });
+      
+      // Keep only this adjustment if resetting baseline or append
+      saveStorage();
+      recalculateAndRender();
+    });
+
+    // Add Deposit Event
+    depositForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const amount = parseFloat(inputAmount.value);
+      const date = inputDate.value;
+      const note = inputNote.value.trim();
+
+      if (!amount || !date) return;
+
+      const newDep = {
+        id: Date.now(),
+        date: date,
+        amount: amount,
+        note: note
+      };
+
+      deposits.push(newDep);
+      saveStorage();
+      recalculateAndRender();
+
+      inputNote.value = '';
+    });
+
+    // Quick +50,000 VND Today
+    btnQuick50k.addEventListener('click', () => {
+      const todayStr = new Date().toISOString().split('T')[0];
+      deposits.push({
+        id: Date.now(),
+        date: todayStr,
+        amount: 50000,
+        note: 'Nạp nhanh +50k'
+      });
+      saveStorage();
+      recalculateAndRender();
+    });
+
+    // Delete Single Deposit
+    window.deleteDeposit = function(id) {
+      deposits = deposits.filter(d => d.id !== id);
+      saveStorage();
+      recalculateAndRender();
+    };
+
+    // Reset All Data
+    btnResetData.addEventListener('click', () => {
+      if (confirm('Bạn có chắc chắn muốn xóa toàn bộ lịch sử nạp tiền?')) {
+        deposits = [];
+        saveStorage();
+        recalculateAndRender();
+      }
+    });
+
+    // Slider Controls Listeners
+    inputProjDaily.addEventListener('input', (e) => {
+      valProjDaily.innerText = formatVND(e.target.value) + '/ngày';
+      recalculateAndRender();
+    });
+
+    inputProjDays.addEventListener('input', (e) => {
+      valProjDays.innerText = e.target.value + ' ngày (' + (e.target.value / 365).toFixed(1) + ' năm)';
+      document.getElementById('projectionInfoText').innerText = 'Dự phóng +' + e.target.value + ' ngày tới';
+      recalculateAndRender();
+    });
+
+    inputRate.addEventListener('input', recalculateAndRender);
+  </script>
+
+</body>
+</html>
