@@ -63,16 +63,24 @@
       <!-- LEFT COLUMN: CONTROLS & CALCULATOR -->
       <div class="lg:col-span-5 space-y-6">
 
-        <!-- Cập nhật số dư trực tiếp -->
+        <!-- Cập nhật số dư trực tiếp & Reset -->
         <div class="card-dark p-4 sm:p-5 rounded-2xl">
           <h3 class="text-sm font-semibold text-slate-200 mb-3 flex items-center gap-2">
             <i class="fa-solid fa-pen-to-square text-cyan-400"></i> Cập Nhật Số Dư Thực Tế
           </h3>
           <p class="text-xs text-slate-400 mb-3">Nhập chính xác số tiền hiện có trên ứng dụng của bạn:</p>
-          <div class="flex gap-2">
+          <div class="flex gap-2 mb-4">
             <input type="number" id="inputDirectBalance" placeholder="VD: 5000000" class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500">
             <button onclick="setExactBalance()" class="bg-cyan-600 hover:bg-cyan-500 text-white font-semibold text-xs px-4 py-2 rounded-xl transition">
               Cập nhật
+            </button>
+          </div>
+
+          <!-- NÚT RESET DỮ LIỆU -->
+          <div class="pt-3 border-t border-slate-800/80 flex items-center justify-between">
+            <span class="text-xs text-slate-500">Đặt lại số dư về 0 ₫ & xóa lịch sử</span>
+            <button onclick="resetAllData()" class="bg-rose-900/40 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-800/60 font-medium text-xs px-3 py-1.5 rounded-xl transition flex items-center gap-1.5">
+              <i class="fa-solid fa-trash-can"></i> Reset tất cả
             </button>
           </div>
         </div>
@@ -188,7 +196,7 @@
 
   <script>
     // ==========================================
-    // CẤU HÌNH ĐỒNG BỘ JSONBIN (ĐÃ CÀI ĐẶT SẴN)
+    // CẤU HÌNH ĐỒNG BỘ JSONBIN
     // ==========================================
     const JSONBIN_BIN_ID = "6ab42b7cffd5d1605327d5c0"; 
     const JSONBIN_API_KEY = "$2a$10$RInj7dhK04O9Rnnvvh0./uL6D7zxX7mAFiYxVz8grZ.tQJwBBEV9C";
@@ -360,6 +368,18 @@
       input.value = '';
       updateUI();
       await saveCloudData();
+    }
+
+    async function resetAllData() {
+      const confirmReset = confirm("Bạn có chắc chắn muốn RESET toàn bộ dữ liệu?\n\n- Số dư sẽ về 0 ₫\n- Toàn bộ lịch sử giao dịch sẽ bị xóa vĩnh viễn.");
+      if (confirmReset) {
+        appData = {
+          balance: 0,
+          history: []
+        };
+        updateUI();
+        await saveCloudData();
+      }
     }
 
     function runSimulation() {
